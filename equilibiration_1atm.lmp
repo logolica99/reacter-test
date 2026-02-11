@@ -1,0 +1,122 @@
+echo            screen
+variable        dcdfreq index 2000
+variable        outputname index done_equilibiration_1atm_modified
+variable        outputdir index output_files
+
+# ------------------------------- Initialization Section --------------------
+clear
+
+# Create output directory
+shell mkdir -p ${outputdir}
+
+#------------Initialization------------
+units           real
+dimension       3
+boundary        p p p
+newton          on
+
+
+#------------Force Field------------
+atom_style      full
+bond_style      class2
+angle_style     class2
+dihedral_style  class2
+improper_style  class2
+special_bonds   lj/coul 0 0 1
+
+kspace_style    pppm 1.0e-4
+pair_style      lj/class2/coul/long 12.0
+pair_modify     mix sixthpower
+
+# Pair style hybrid/overlay
+# pair_style hybrid/overlay table linear 1000 lj/class2/coul/long 12.0
+# pair_modify mix sixthpower
+
+neighbor        2.0 bin
+neigh_modify    delay 0 every 1 check yes one 5000 page 100000
+
+# ------------------------------- Atom Definition Section -------------------
+read_data system1_cell_replicate.data
+#read_restart rst1.a.UPDATE_ME
+# ----------------- Settings Section -----------------
+
+#include "final.in.settings"
+# Define pair coefficients
+# Use lj/class2/coul/long for the rest
+
+
+
+
+#-----------------------------------------
+
+log                 ${outputdir}/logequil1.log
+
+comm_style brick 
+comm_modify mode single vel yes
+thermo_style custom etotal ke temp pe ebond eangle edihed eimp evdwl ecoul elong press step
+thermo_modify line multi format float %g 
+thermo 1000
+
+#minimize 1.0e-4 1.0e-6 100 1000
+#write_data minimized.data
+timestep 1
+
+#fix 10212 all shake 0.0001 10000 0 m 1.0
+
+# ------------------------------- Run Section -------------------------------
+
+thermo_style    custom step time xlo xhi ylo yhi zlo zhi etotal pe ke temp press ebond eangle edihed eimp evdwl ecoul elong temp vol density
+# dump            1 all dcd ${dcdfreq} ${outputdir}/${outputname}.dcd
+
+# dump_modify     1 unwrap yes
+
+dump 1 all custom ${dcdfreq} ${outputdir}/${outputname}.lammpstrj id type x y z vx vy vz ix iy iz
+# unfix 2
+
+#-------------- 
+restart         20000 ${outputdir}/rst1.a.UPDATE_ME ${outputdir}/rst2.a.UPDATE_ME
+
+#fix             1 all nvt temp 300 300 100.0
+#run 100000
+#unfix 1
+#fix 2 all npt temp 300.0 300.0 100.0 iso 1.0 1.0 1000.0
+#run 3000000
+#unfix 2
+
+
+#write_data      fix.2.nvt.data
+# 98692.326671601 atm = 10GPa 
+# 24673.1 atm = 2.5 GPa
+fix 2 all npt temp 300.0 300.0 100.0 iso 1.0 1 1000.0
+run 3000000
+unfix 2
+
+#write_data      fix.2.npt-10GPa_A.data
+# -------------
+
+fix             1 all nvt temp 300 300 100.0
+run 500000
+unfix 1
+
+
+#write_data      fix.2.nvt_A.data
+
+
+#fix 2 all npt temp 300.0 300.0 100.0 iso 98692.326671601 98692.326671601 1000.0
+#run 500000
+#unfix 2
+
+#write_data      fix.2.npt-10GPa_B.data
+#
+
+#fix             1 all nvt temp 300 300 100.0
+#run 50000
+#unfix 1
+
+#unfix 10212 
+
+shell cd ${outputdir}
+
+write_dump      all custom ${outputname}.dump id type x y z vx vy vz ix iy iz
+write_data      ${outputname}.data
+

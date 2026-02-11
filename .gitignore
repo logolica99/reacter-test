@@ -1,0 +1,24 @@
+# Ignore log directory
+logs/
+
+# Ignore output directories
+output/
+output_files/
+
+# Ignore common LAMMPS / HPC artifacts (extra safety)
+*.log
+*.out
+*.dump
+*.lammpstrj
+*.dcd
+*.rst
+*.UPDATE_ME
+
+# Ignore Slurm job files
+job.o*
+job.e*
+
+# Optional: ignore temporary/system files
+*.swp
+*~
+.DS_Store
