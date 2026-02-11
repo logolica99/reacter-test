@@ -32,3 +32,5 @@ module load lammps/20230208
 mpirun -np 40 $lmp_exec -log logs/lammps.log -in equilibiration_1atm.lmp > output/simulation.out
 
 #./lmp_mpi < in.eqm > out.txt
+
+echo "Hello, World!"
